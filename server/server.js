@@ -2,11 +2,24 @@ const express = require('express')
 const app = express()
 const mongoose = require('mongoose')
 const bodyParser = require('body-parser')
+const multer = require('multer')
 
 app.use(bodyParser.json())
 
+var storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'tmp/my-uploads')
+  },
+  filename: function (req, file, cb) {
+    var extension = file.originalname.substr(file.originalname.lastIndexOf('.'))
+    cb(null, file.fieldname + '-' + Date.now() + extension)
+  }
+})
+ 
+var upload = multer({ storage: storage })
+
 // DB Option
-const dbUrl = "mongodb+srv://haniif:haniif@cluster0-igq45.mongodb.net/test"
+const dbUrl = "mongodb+srv://florianasho:Flor4394@cluster0-lfkaq.mongodb.net/test"
 const dbOption = {
   useNewUrlParser: true,
   useUnifiedTopology: true
@@ -25,17 +38,25 @@ var customers = new mongoose.Schema({
     type: String,
     trim: true,
     required: true
+  },
+  image: {
+    type: String,
+    trim: true,
+    required: true
   }
 })
 
 var Customers = mongoose.model('customers', customers)
 
 // Insert
-app.post('/insert', function (req, res) {
+app.post('/insert', upload.single('image'), function (req, res) {
   try {
+    var img = req.file.filename
+
     var myobj = { 
       name: req.body.name, 
-      address: req.body.address
+      address: req.body.address,
+      image: img
     }
     const customer = new Customers(myobj)
     customer.save()
